@@ -87,6 +87,7 @@ BufferedUndoManager = (function() {
       clearTimeout(this.bufferTimeout);
     }
     this.bufferTimeout = setTimeout(function() {
+      _this.trigger('buffered', _this.state);
       return _this.bufferReady = true;
     }, this.options.buffer);
     this.state = state;

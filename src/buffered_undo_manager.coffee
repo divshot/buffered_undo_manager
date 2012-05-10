@@ -99,6 +99,7 @@ class BufferedUndoManager
   # * redo
   # * change
   # * push
+  # * buffered
   on: (args...)->
     $(this).on args...
   # ## manager.off(event, [handler])
@@ -134,6 +135,7 @@ class BufferedUndoManager
     
     clearTimeout @bufferTimeout if @bufferTimeout?
     @bufferTimeout = setTimeout =>
+      @trigger 'buffered', @state
       @bufferReady = true
     , @options.buffer
 
