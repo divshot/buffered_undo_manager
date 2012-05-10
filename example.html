@@ -1,0 +1,78 @@
+<!doctype html>
+<html>
+  <head>
+    <script type='text/javascript' src='http://cdnjs.cloudflare.com/ajax/libs/jquery/1.7.2/jquery.min.js'></script>
+    <script type='text/javascript' src='http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.3.3/underscore-min.js'></script>
+    <script type='text/javascript' src='https://raw.github.com/divshot/buffered_input_manager/master/build/buffered_undo_manager.js'></script>
+    <link rel='stylesheet' href='http://twitter.github.com/bootstrap/assets/css/bootstrap.css'/>
+    <style>
+      textarea {
+        width: 100%;
+        height: 300px;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class='container'>
+      <div class="page-header">
+        <h1>Buffered Undo Manager</h1>
+      </div>
+      <div class="grid row-fluid">
+        <div class="span span4 clearfix">
+          <div class="well">
+            <h3>Next Undo</h3>
+            <textarea readonly id='undo'></textarea>
+          </div>
+        </div>
+        <div class="span span4 clearfix">
+          <div class="well">
+            <h3>
+              <div style='float: right;'>
+                <button id='undo_button' class='btn' disabled>Undo</button>
+                <button id='redo_button' class='btn' disabled>Redo</button>
+              </div>
+              Current State
+            </h3>
+            <textarea id='state'></textarea>
+          </div>
+        </div>
+        <div class="span span4 clearfix">
+          <div class="well">
+            <h3>Next Redo</h3>
+            <textarea readonly id='redo'></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script type='text/javascript'>
+      $(function() {
+        var manager = new BufferedUndoManager();
+
+        $('#state').keyup(function() {
+          manager.update($(this).val());
+        });
+
+        $('#undo_button').click(function() {
+          manager.undo()
+        });
+        $('#redo_button').click(function() {
+          manager.redo()
+        });
+
+        manager.on('push undo redo', function() {
+          $('#undo').val(manager.undos[manager.undos.length - 1]);
+          $('#redo').val(manager.redos[manager.redos.length - 1]);
+
+          $('#undo_button, #redo_button').attr('disabled','disabled');
+          if (manager.canUndo()) $('#undo_button').removeAttr('disabled');
+          if (manager.canRedo()) $('#redo_button').removeAttr('disabled');
+        });
+
+        manager.on('undo redo', function(e, state) {
+          $('#state').val(state);
+        });
+      });
+    </script>
+  </body>
+</html>
