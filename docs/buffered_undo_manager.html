@@ -1,0 +1,134 @@
+<!DOCTYPE html>  <html> <head>   <title>buffered_undo_manager.coffee</title>   <meta http-equiv="content-type" content="text/html; charset=UTF-8">   <link rel="stylesheet" media="all" href="docco.css" /> </head> <body>   <div id="container">     <div id="background"></div>          <table cellpadding="0" cellspacing="0">       <thead>         <tr>           <th class="docs">             <h1>               buffered_undo_manager.coffee             </h1>           </th>           <th class="code">           </th>         </tr>       </thead>       <tbody>                               <tr id="section-1">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-1">&#182;</a>               </div>               <p>The Buffered Undo Manager is a simple way to provide an
+undo/redo stack for a Javascript application.</p>
+
+<p><strong>Prerequisites:</strong> Requires that jQuery and Underscore both
+be installed.</p>             </td>             <td class="code">               <div class="highlight"><pre><span class="k">class</span> <span class="nx">BufferedUndoManager</span></pre></div>             </td>           </tr>                               <tr id="section-2">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-2">&#182;</a>               </div>               <h2>new BufferedUndoManager(options)</h2>
+
+<p>Initializes a new undo manager with the provided options.
+Options may be specified as follows:</p>
+
+<ul>
+<li><strong>buffer:</strong> The amount of time (in ms) to buffer updates before
+allowing another push to the undo stack. Defaults to <code>1000</code>.</li>
+<li><strong>synchronize:</strong> A callback that is called after undos and redos,
+allowing you to update data or displays. Alternatively see the
+<code>on</code> and <code>off</code> methods for binding to events instead.</li>
+<li><strong>synchronizeOnUpdate:</strong> Whether or not to call the <code>synchronize</code>
+method when <code>update</code> is called in addition to <code>undo</code> and <code>redo</code>.</li>
+<li><strong>comparator:</strong> A function that takes two arguments <code>a</code> and <code>b</code>
+and returns <code>true</code> if they are identical and <code>false</code> if they
+are not. Used to avoid pushing duplicate states to the stack.
+Defaults to naive equality.</li>
+</ul>             </td>             <td class="code">               <div class="highlight"><pre>  <span class="nv">constructor: </span><span class="nf">(options)-&gt;</span>
+    <span class="vi">@bindings = </span><span class="p">{}</span>
+    <span class="vi">@options = </span><span class="nx">_</span><span class="p">.</span><span class="nx">extend</span>
+      <span class="nv">buffer: </span><span class="mi">1000</span>
+      <span class="nv">synchronizeOnUpdate: </span><span class="kc">false</span>
+      <span class="nv">comparator: </span><span class="nf">(a,b)-&gt;</span>
+        <span class="nx">a</span> <span class="o">==</span> <span class="nx">b</span>
+    <span class="p">,</span> <span class="nx">options</span>
+
+    <span class="nx">@reset</span><span class="p">(</span><span class="nx">@options</span><span class="p">.</span><span class="nx">state</span><span class="p">)</span></pre></div>             </td>           </tr>                               <tr id="section-3">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-3">&#182;</a>               </div>               <h2>manager.reset(state)</h2>
+
+<p>Resets the undo manager to a blank slate.
+Useful if you are using an application-wide
+undo manager and have loaded a different editable
+resource, for instance.</p>
+
+<h3>Arguments</h3>
+
+<ul>
+<li><strong>state:</strong> The 'initial' state to which to reset.</li>
+</ul>             </td>             <td class="code">               <div class="highlight"><pre>  <span class="nv">reset: </span><span class="nf">(state)-&gt;</span>
+    <span class="k">delete</span> <span class="nx">@undos</span>
+    <span class="k">delete</span> <span class="nx">@redos</span>
+    <span class="vi">@undos = </span><span class="p">[]</span>
+    <span class="vi">@redos = </span><span class="p">[]</span>
+    <span class="vi">@bufferReady = </span><span class="kc">true</span>
+    <span class="vi">@state = </span><span class="nx">state</span></pre></div>             </td>           </tr>                               <tr id="section-4">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-4">&#182;</a>               </div>               <h2>manager.undo()</h2>
+
+<p>Performs an undo operation. This operation will
+run the <code>synchronize</code> callback if present and will
+also trigger an <code>undo</code> event.</p>             </td>             <td class="code">               <div class="highlight"><pre>  <span class="nv">undo: </span><span class="o">-&gt;</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span> <span class="s2">&quot;Performing undo...&quot;</span>
+    <span class="k">return</span> <span class="kc">false</span> <span class="nx">unless</span> <span class="nx">@canUndo</span><span class="p">()</span>
+    <span class="nx">@redos</span><span class="p">.</span><span class="nx">push</span> <span class="nx">@state</span>
+    <span class="vi">@state = </span><span class="nx">@undos</span><span class="p">.</span><span class="nx">pop</span><span class="p">()</span>
+    <span class="nx">@trigger</span> <span class="s1">&#39;undo&#39;</span><span class="p">,</span> <span class="nx">@state</span>
+    <span class="nx">@synchronize</span><span class="p">()</span>
+    <span class="nx">@undos</span><span class="p">.</span><span class="nx">length</span></pre></div>             </td>           </tr>                               <tr id="section-5">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-5">&#182;</a>               </div>               <h2>manager.redo()</h2>
+
+<p>Performs a redo operation. This operation will
+run the <code>synchronize</code> callback if present and will
+also trigger a <code>redo</code> event.</p>             </td>             <td class="code">               <div class="highlight"><pre>  <span class="nv">redo: </span><span class="o">-&gt;</span>
+    <span class="k">return</span> <span class="kc">false</span> <span class="nx">unless</span> <span class="nx">@canRedo</span><span class="p">()</span>
+    <span class="nx">@undos</span><span class="p">.</span><span class="nx">push</span> <span class="nx">@state</span>
+    <span class="vi">@state = </span><span class="nx">@redos</span><span class="p">.</span><span class="nx">pop</span><span class="p">()</span>
+    <span class="nx">@trigger</span> <span class="s1">&#39;redo&#39;</span><span class="p">,</span> <span class="nx">@state</span>
+    <span class="nx">@synchronize</span><span class="p">()</span>
+    <span class="nx">@redos</span><span class="p">.</span><span class="nx">length</span></pre></div>             </td>           </tr>                               <tr id="section-6">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-6">&#182;</a>               </div>               <h2>manager.canUndo()</h2>
+
+<p>Returns <code>true</code> if there are any states to undo
+to, `false otherwise.</p>             </td>             <td class="code">               <div class="highlight"><pre>  <span class="nv">canUndo: </span><span class="o">-&gt;</span>
+    <span class="nx">@undos</span><span class="p">.</span><span class="nx">length</span> <span class="o">&gt;</span> <span class="mi">0</span></pre></div>             </td>           </tr>                               <tr id="section-7">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-7">&#182;</a>               </div>               <h2>manager.canRedo()</h2>
+
+<p>Returns <code>true</code> if there are any states to redo
+to, `false otherwise.</p>             </td>             <td class="code">               <div class="highlight"><pre>  <span class="nv">canRedo: </span><span class="o">-&gt;</span>
+    <span class="nx">@redos</span><span class="p">.</span><span class="nx">length</span> <span class="o">&gt;</span> <span class="mi">0</span></pre></div>             </td>           </tr>                               <tr id="section-8">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-8">&#182;</a>               </div>               <h2>manager.on(event, handler)</h2>
+
+<p>Takes a string of space-separated events and
+calls the provided handler function when the given
+events trigger. Available events are:</p>
+
+<ul>
+<li>undo</li>
+<li>redo</li>
+<li>change</li>
+</ul>             </td>             <td class="code">               <div class="highlight"><pre>  <span class="kc">on</span><span class="o">:</span> <span class="nf">(args...)-&gt;</span>
+    <span class="nx">$</span><span class="p">(</span><span class="k">this</span><span class="p">).</span><span class="kc">on</span> <span class="nx">args</span><span class="p">...</span></pre></div>             </td>           </tr>                               <tr id="section-9">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-9">&#182;</a>               </div>               <h2>manager.off(event, [handler])</h2>
+
+<p>Takes an event string and optional handler. If handler
+is provided only that specific handler will be unbound.
+Otherwise all handlers will be unbound.</p>             </td>             <td class="code">               <div class="highlight"><pre>  <span class="kc">off</span><span class="o">:</span> <span class="nf">(args...)-&gt;</span>
+    <span class="nx">$</span><span class="p">(</span><span class="k">this</span><span class="p">).</span><span class="kc">off</span> <span class="nx">args</span><span class="p">...</span></pre></div>             </td>           </tr>                               <tr id="section-10">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-10">&#182;</a>               </div>               <h2>manager.update(state, options)</h2>
+
+<p>Update the state of the undo manager.</p>
+
+<h3>Arguments</h3>
+
+<ul>
+<li><strong>state:</strong> The new state. Can be anything.</li>
+</ul>
+
+<h3>Options</h3>
+
+<ul>
+<li><strong>force:</strong> if set to <code>true</code> then this update
+will ignore buffering and immediately trigger
+a new undo state regardless of current buffering.</li>
+</ul>             </td>             <td class="code">               <div class="highlight"><pre>  <span class="nv">update: </span><span class="nf">(state, options = {})-&gt;</span>
+    <span class="k">return</span> <span class="kc">false</span> <span class="k">if</span> <span class="nx">@options</span><span class="p">.</span><span class="nx">comparator</span><span class="p">(</span><span class="nx">@state</span><span class="p">,</span> <span class="nx">state</span><span class="p">)</span> <span class="o">and</span> <span class="o">!</span><span class="nx">options</span><span class="p">.</span><span class="nx">force</span>
+
+    <span class="vi">@redos = </span><span class="p">[]</span>
+
+    <span class="k">if</span> <span class="nx">options</span><span class="p">.</span><span class="nx">force</span> <span class="o">or</span> <span class="nx">@bufferReady</span>  
+      <span class="nx">@undos</span><span class="p">.</span><span class="nx">push</span> <span class="nx">@state</span>
+      <span class="nx">@trigger</span> <span class="s1">&#39;push&#39;</span><span class="p">,</span> <span class="nx">@state</span>
+      <span class="vi">@bufferReady = </span><span class="kc">false</span>
+    
+    <span class="nx">clearTimeout</span> <span class="nx">@bufferTimeout</span> <span class="k">if</span> <span class="nx">@bufferTimeout</span><span class="o">?</span>
+    <span class="vi">@bufferTimeout = </span><span class="nx">setTimeout</span> <span class="o">=&gt;</span>
+      <span class="vi">@bufferReady = </span><span class="kc">true</span>
+    <span class="p">,</span> <span class="nx">@options</span><span class="p">.</span><span class="nx">buffer</span>
+
+    <span class="vi">@state = </span><span class="nx">state</span>
+    <span class="nx">@synchronize</span><span class="p">(</span><span class="nx">@options</span><span class="p">.</span><span class="nx">synchronizeOnUpdate</span><span class="o">?</span><span class="p">)</span>
+
+  <span class="nv">trigger: </span><span class="nf">(args...)-&gt;</span>
+    <span class="nx">$</span><span class="p">(</span><span class="k">this</span><span class="p">).</span><span class="nx">triggerHandler</span> <span class="nx">args</span><span class="p">...</span>
+
+  <span class="nv">synchronize: </span><span class="nf">(options)-&gt;</span>
+    <span class="nx">@trigger</span> <span class="s1">&#39;change&#39;</span><span class="p">,</span> <span class="nx">@state</span>
+    <span class="nx">@options</span><span class="p">.</span><span class="nx">synchronize</span> <span class="nx">@state</span> <span class="k">if</span> <span class="nx">@options</span><span class="p">.</span><span class="nx">synchronize</span><span class="o">?</span> <span class="o">and</span> <span class="nx">callThrough</span>
+
+</pre></div>             </td>           </tr>                </tbody>     </table>   </div> </body> </html> 
