@@ -44,6 +44,10 @@ manager.state; // "t"
 By default the manager will buffer input for one second (the input must
 become idle for one second before another entry will be created).
 
+## Demo
+
+You can see a [simple example](https://divshot.github.com/example.html) of how the library works.
+
 ## Documentation
 
 You can see the [Docco Docs](https://divshot.github.com/buffered_undo_manager/docs/buffered_undo_manager.html) for more in-depth API documentation.
