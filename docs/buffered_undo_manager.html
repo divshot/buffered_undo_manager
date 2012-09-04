@@ -39,9 +39,11 @@ resource, for instance.</p>
 
 <ul>
 <li><strong>state:</strong> The 'initial' state to which to reset.</li>
-</ul>             </td>             <td class="code">               <div class="highlight"><pre>  <span class="nv">reset: </span><span class="nf">(state)-&gt;</span>
+</ul>             </td>             <td class="code">               <div class="highlight"><pre>  <span class="nv">reset: </span><span class="nf">(state, options = {})-&gt;</span>
+    <span class="nx">@clearTimeout</span><span class="p">()</span>
     <span class="k">delete</span> <span class="nx">@undos</span>
     <span class="k">delete</span> <span class="nx">@redos</span>
+    <span class="k">delete</span> <span class="nx">@bufferTimeout</span>
     <span class="vi">@undos = </span><span class="p">[]</span>
     <span class="vi">@redos = </span><span class="p">[]</span>
     <span class="vi">@bufferReady = </span><span class="kc">true</span>
@@ -50,11 +52,10 @@ resource, for instance.</p>
 <p>Performs an undo operation. This operation will
 run the <code>synchronize</code> callback if present and will
 also trigger an <code>undo</code> event.</p>             </td>             <td class="code">               <div class="highlight"><pre>  <span class="nv">undo: </span><span class="o">-&gt;</span>
-    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span> <span class="s2">&quot;Performing undo...&quot;</span>
     <span class="k">return</span> <span class="kc">false</span> <span class="nx">unless</span> <span class="nx">@canUndo</span><span class="p">()</span>
     <span class="nx">@redos</span><span class="p">.</span><span class="nx">push</span> <span class="nx">@state</span>
     <span class="vi">@state = </span><span class="nx">@undos</span><span class="p">.</span><span class="nx">pop</span><span class="p">()</span>
-    <span class="nx">@trigger</span> <span class="s1">&#39;undo&#39;</span><span class="p">,</span> <span class="nx">@state</span>
+    <span class="nx">@trigger</span> <span class="s">&#39;undo&#39;</span><span class="p">,</span> <span class="nx">@state</span>
     <span class="nx">@synchronize</span><span class="p">()</span>
     <span class="nx">@undos</span><span class="p">.</span><span class="nx">length</span></pre></div>             </td>           </tr>                               <tr id="section-5">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-5">&#182;</a>               </div>               <h2>manager.redo()</h2>
 
@@ -64,7 +65,7 @@ also trigger a <code>redo</code> event.</p>             </td>             <td cl
     <span class="k">return</span> <span class="kc">false</span> <span class="nx">unless</span> <span class="nx">@canRedo</span><span class="p">()</span>
     <span class="nx">@undos</span><span class="p">.</span><span class="nx">push</span> <span class="nx">@state</span>
     <span class="vi">@state = </span><span class="nx">@redos</span><span class="p">.</span><span class="nx">pop</span><span class="p">()</span>
-    <span class="nx">@trigger</span> <span class="s1">&#39;redo&#39;</span><span class="p">,</span> <span class="nx">@state</span>
+    <span class="nx">@trigger</span> <span class="s">&#39;redo&#39;</span><span class="p">,</span> <span class="nx">@state</span>
     <span class="nx">@synchronize</span><span class="p">()</span>
     <span class="nx">@redos</span><span class="p">.</span><span class="nx">length</span></pre></div>             </td>           </tr>                               <tr id="section-6">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-6">&#182;</a>               </div>               <h2>manager.canUndo()</h2>
 
@@ -84,6 +85,8 @@ events trigger. Available events are:</p>
 <li>undo</li>
 <li>redo</li>
 <li>change</li>
+<li>push</li>
+<li>buffered</li>
 </ul>             </td>             <td class="code">               <div class="highlight"><pre>  <span class="kc">on</span><span class="o">:</span> <span class="nf">(args...)-&gt;</span>
     <span class="nx">$</span><span class="p">(</span><span class="k">this</span><span class="p">).</span><span class="kc">on</span> <span class="nx">args</span><span class="p">...</span></pre></div>             </td>           </tr>                               <tr id="section-9">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-9">&#182;</a>               </div>               <h2>manager.off(event, [handler])</h2>
 
@@ -113,22 +116,26 @@ a new undo state regardless of current buffering.</li>
 
     <span class="k">if</span> <span class="nx">options</span><span class="p">.</span><span class="nx">force</span> <span class="o">or</span> <span class="nx">@bufferReady</span>  
       <span class="nx">@undos</span><span class="p">.</span><span class="nx">push</span> <span class="nx">@state</span>
-      <span class="nx">@trigger</span> <span class="s1">&#39;push&#39;</span><span class="p">,</span> <span class="nx">@state</span>
+      <span class="nx">@trigger</span> <span class="s">&#39;push&#39;</span><span class="p">,</span> <span class="nx">@state</span>
       <span class="vi">@bufferReady = </span><span class="kc">false</span>
     
-    <span class="nx">clearTimeout</span> <span class="nx">@bufferTimeout</span> <span class="k">if</span> <span class="nx">@bufferTimeout</span><span class="o">?</span>
+    <span class="nx">@clearTimeout</span><span class="p">()</span>
     <span class="vi">@bufferTimeout = </span><span class="nx">setTimeout</span> <span class="o">=&gt;</span>
+      <span class="nx">@trigger</span> <span class="s">&#39;buffered&#39;</span><span class="p">,</span> <span class="nx">@state</span>
       <span class="vi">@bufferReady = </span><span class="kc">true</span>
     <span class="p">,</span> <span class="nx">@options</span><span class="p">.</span><span class="nx">buffer</span>
 
     <span class="vi">@state = </span><span class="nx">state</span>
     <span class="nx">@synchronize</span><span class="p">(</span><span class="nx">@options</span><span class="p">.</span><span class="nx">synchronizeOnUpdate</span><span class="o">?</span><span class="p">)</span>
 
+  <span class="nv">clearTimeout: </span><span class="o">-&gt;</span>
+    <span class="nx">clearTimeout</span> <span class="nx">@bufferTimeout</span> <span class="k">if</span> <span class="nx">@bufferTimeout</span><span class="o">?</span>
+
   <span class="nv">trigger: </span><span class="nf">(args...)-&gt;</span>
     <span class="nx">$</span><span class="p">(</span><span class="k">this</span><span class="p">).</span><span class="nx">triggerHandler</span> <span class="nx">args</span><span class="p">...</span>
 
   <span class="nv">synchronize: </span><span class="nf">(options)-&gt;</span>
-    <span class="nx">@trigger</span> <span class="s1">&#39;change&#39;</span><span class="p">,</span> <span class="nx">@state</span>
+    <span class="nx">@trigger</span> <span class="s">&#39;change&#39;</span><span class="p">,</span> <span class="nx">@state</span>
     <span class="nx">@options</span><span class="p">.</span><span class="nx">synchronize</span> <span class="nx">@state</span> <span class="k">if</span> <span class="nx">@options</span><span class="p">.</span><span class="nx">synchronize</span><span class="o">?</span> <span class="o">and</span> <span class="nx">callThrough</span>
 
 </pre></div>             </td>           </tr>                </tbody>     </table>   </div> </body> </html> 
