@@ -47,7 +47,7 @@
     </div>
     <script type='text/javascript'>
       $(function() {
-        var manager = new BufferedUndoManager();
+        window.manager = new BufferedUndoManager();
 
         $('#state').keyup(function() {
           manager.update($(this).val());

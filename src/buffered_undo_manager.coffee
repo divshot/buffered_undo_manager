@@ -41,9 +41,11 @@ class BufferedUndoManager
   # ### Arguments
   #
   # * **state:** The 'initial' state to which to reset.
-  reset: (state)->
+  reset: (state, options = {})->
+    @clearTimeout()
     delete @undos
     delete @redos
+    delete @bufferTimeout
     @undos = []
     @redos = []
     @bufferReady = true
@@ -55,7 +57,6 @@ class BufferedUndoManager
   # run the `synchronize` callback if present and will
   # also trigger an `undo` event.
   undo: ->
-    console.log "Performing undo..."
     return false unless @canUndo()
     @redos.push @state
     @state = @undos.pop()
@@ -133,7 +134,7 @@ class BufferedUndoManager
       @trigger 'push', @state
       @bufferReady = false
     
-    clearTimeout @bufferTimeout if @bufferTimeout?
+    @clearTimeout()
     @bufferTimeout = setTimeout =>
       @trigger 'buffered', @state
       @bufferReady = true
@@ -141,6 +142,9 @@ class BufferedUndoManager
 
     @state = state
     @synchronize(@options.synchronizeOnUpdate?)
+
+  clearTimeout: ->
+    clearTimeout @bufferTimeout if @bufferTimeout?
 
   trigger: (args...)->
     $(this).triggerHandler args...

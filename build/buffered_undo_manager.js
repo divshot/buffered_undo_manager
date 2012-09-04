@@ -3,8 +3,6 @@ var BufferedUndoManager,
 
 BufferedUndoManager = (function() {
 
-  BufferedUndoManager.name = 'BufferedUndoManager';
-
   function BufferedUndoManager(options) {
     this.bindings = {};
     this.options = _.extend({
@@ -17,9 +15,14 @@ BufferedUndoManager = (function() {
     this.reset(this.options.state);
   }
 
-  BufferedUndoManager.prototype.reset = function(state) {
+  BufferedUndoManager.prototype.reset = function(state, options) {
+    if (options == null) {
+      options = {};
+    }
+    this.clearTimeout();
     delete this.undos;
     delete this.redos;
+    delete this.bufferTimeout;
     this.undos = [];
     this.redos = [];
     this.bufferReady = true;
@@ -27,7 +30,6 @@ BufferedUndoManager = (function() {
   };
 
   BufferedUndoManager.prototype.undo = function() {
-    console.log("Performing undo...");
     if (!this.canUndo()) {
       return false;
     }
@@ -83,15 +85,19 @@ BufferedUndoManager = (function() {
       this.trigger('push', this.state);
       this.bufferReady = false;
     }
-    if (this.bufferTimeout != null) {
-      clearTimeout(this.bufferTimeout);
-    }
+    this.clearTimeout();
     this.bufferTimeout = setTimeout(function() {
       _this.trigger('buffered', _this.state);
       return _this.bufferReady = true;
     }, this.options.buffer);
     this.state = state;
     return this.synchronize(this.options.synchronizeOnUpdate != null);
+  };
+
+  BufferedUndoManager.prototype.clearTimeout = function() {
+    if (this.bufferTimeout != null) {
+      return clearTimeout(this.bufferTimeout);
+    }
   };
 
   BufferedUndoManager.prototype.trigger = function() {
